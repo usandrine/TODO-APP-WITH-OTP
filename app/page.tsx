@@ -14,6 +14,13 @@ export default function HomePage() {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" })
   const [otpForm, setOtpForm] = useState({ otp: "", newPassword: "", confirmPassword: "" })
 
+  const scrollToAuth = () => {
+    const authSection = document.getElementById("auth-section")
+    if (authSection) {
+      authSection.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
       {/* Header */}
@@ -53,7 +60,7 @@ export default function HomePage() {
               management features designed for modern teams.
             </p>
             <div className="flex justify-center mt-8">
-              <Button size="lg" className="font-medium group">
+              <Button size="lg" className="font-medium group" onClick={scrollToAuth}>
                 Get Started Today
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -122,7 +129,7 @@ export default function HomePage() {
           </div>
 
           {/* Authentication Section */}
-          <Card className="max-w-lg mx-auto shadow-xl border-primary/10">
+          <Card id="auth-section" className="max-w-lg mx-auto shadow-xl border-primary/10">
             <CardHeader className="text-center pb-6">
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Zap className="h-6 w-6 text-primary" />

@@ -34,11 +34,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Plus, Edit, Trash2, CheckCircle2, Clock, AlertCircle, Calendar, Eye } from "lucide-react"
+import { Pagination } from "@/components/pagination"
 
 export default function UserDashboard() {
   const [activeSection, setActiveSection] = useState("tasks")
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
+
+  const [currentPage, setCurrentPage] = useState(1)
+  const [tasksPerPage] = useState(5)
 
   const [tasks, setTasks] = useState([
     {
@@ -167,386 +171,407 @@ export default function UserDashboard() {
     },
   ]
 
-  const renderTaskManagement = () => (
-    <div className="space-y-6">
-      <PageHeader
-        title="My Tasks"
-        description="Manage your personal tasks and track progress"
-        actionButton={{
-          label: "New Task",
-          icon: <Plus className="h-4 w-4 mr-2" />,
-          trigger: (
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="font-medium">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Task
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="font-serif">Create New Task</DialogTitle>
-                  <DialogDescription>Add a new task to your personal task list</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="task-title">Task Title</Label>
-                    <Input
-                      id="task-title"
-                      placeholder="Enter task title"
-                      value={newTask.title}
-                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="task-description">Description</Label>
-                    <Textarea
-                      id="task-description"
-                      placeholder="Enter task description"
-                      value={newTask.description}
-                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+  const renderTaskManagement = () => {
+    const filteredTasks = tasks.filter((task) => {
+      const matchesSearch =
+        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesFilter = filterStatus === "all" || task.status === filterStatus
+      return matchesSearch && matchesFilter
+    })
+
+    const totalPages = Math.ceil(filteredTasks.length / tasksPerPage)
+    const paginatedTasks = filteredTasks.slice((currentPage - 1) * tasksPerPage, currentPage * tasksPerPage)
+
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="My Tasks"
+          description="Manage your personal tasks and track progress"
+          actionButton={{
+            label: "New Task",
+            icon: <Plus className="h-4 w-4 mr-2" />,
+            trigger: (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="font-medium">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Task
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="font-serif">Create New Task</DialogTitle>
+                    <DialogDescription>Add a new task to your personal task list</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="task-priority">Priority</Label>
-                      <Select
-                        value={newTask.priority}
-                        onValueChange={(value) => setNewTask({ ...newTask, priority: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="task-due">Due Date</Label>
+                      <Label htmlFor="task-title">Task Title</Label>
                       <Input
-                        id="task-due"
-                        type="date"
-                        value={newTask.dueDate}
-                        onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                        id="task-title"
+                        placeholder="Enter task title"
+                        value={newTask.title}
+                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="task-description">Description</Label>
+                      <Textarea
+                        id="task-description"
+                        placeholder="Enter task description"
+                        value={newTask.description}
+                        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="task-priority">Priority</Label>
+                        <Select
+                          value={newTask.priority}
+                          onValueChange={(value) => setNewTask({ ...newTask, priority: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="task-due">Due Date</Label>
+                        <Input
+                          id="task-due"
+                          type="date"
+                          value={newTask.dueDate}
+                          onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={handleCreateTask} className="w-full font-medium">
+                      Create Task
+                    </Button>
                   </div>
-                  <Button onClick={handleCreateTask} className="w-full font-medium">
-                    Create Task
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          ),
-        }}
-      />
+                </DialogContent>
+              </Dialog>
+            ),
+          }}
+        />
 
-      <StatsGrid stats={taskStatsData} />
+        <StatsGrid stats={taskStatsData} />
 
-      <SearchFilters
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchPlaceholder="Search tasks..."
-        filters={[
-          {
-            value: filterStatus,
-            onValueChange: setFilterStatus,
-            placeholder: "Filter by status",
-            options: [
-              { value: "all", label: "All Tasks" },
-              { value: "pending", label: "Pending" },
-              { value: "completed", label: "Completed" },
-            ],
-          },
-        ]}
-      />
+        <SearchFilters
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Search tasks..."
+          filters={[
+            {
+              value: filterStatus,
+              onValueChange: setFilterStatus,
+              placeholder: "Filter by status",
+              options: [
+                { value: "all", label: "All Tasks" },
+                { value: "pending", label: "Pending" },
+                { value: "completed", label: "Completed" },
+              ],
+            },
+          ]}
+        />
 
-      <DataTable
-        title="Task List"
-        description="Your personal tasks and their current status"
-        columns={[
-          { key: "task", label: "Task" },
-          { key: "status", label: "Status" },
-          { key: "priority", label: "Priority" },
-          { key: "dueDate", label: "Due Date" },
-          { key: "actions", label: "Actions", className: "text-right" },
-        ]}
-        data={tasks.filter((task) => {
-          const matchesSearch =
-            task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            task.description.toLowerCase().includes(searchTerm.toLowerCase())
-          const matchesFilter = filterStatus === "all" || task.status === filterStatus
-          return matchesSearch && matchesFilter
-        })}
-        renderCell={(task, column) => {
-          switch (column.key) {
-            case "task":
-              return (
-                <div>
-                  <p className="font-medium">{task.title}</p>
-                  <p className="text-sm text-muted-foreground">{task.description}</p>
-                </div>
-              )
-            case "status":
-              return <StatusBadge status={task.status} />
-            case "priority":
-              return <StatusBadge status={task.priority} type="priority" />
-            case "dueDate":
-              return (
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{task.dueDate}</span>
-                </div>
-              )
-            case "actions":
-              return (
-                <ActionButtons
-                  actions={[
-                    {
-                      icon: <Eye className="h-4 w-4" />,
-                      trigger: (
-                        <Button variant="ghost" size="sm" onClick={() => openViewDialog(task)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      ),
-                    },
-                    {
-                      icon: <Edit className="h-4 w-4" />,
-                      trigger: (
-                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(task)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      ),
-                    },
-                    {
-                      icon: <Trash2 className="h-4 w-4" />,
-                      className: "text-destructive hover:text-destructive",
-                      trigger: (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Task</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{task.title}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => handleDeleteTask(task.id)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ),
-                    },
-                  ]}
+        <DataTable
+          title="Task List"
+          description="Your personal tasks and their current status"
+          columns={[
+            { key: "task", label: "Task" },
+            { key: "status", label: "Status" },
+            { key: "priority", label: "Priority" },
+            { key: "dueDate", label: "Due Date" },
+            { key: "actions", label: "Actions", className: "text-right" },
+          ]}
+          data={paginatedTasks}
+          renderCell={(task, column) => {
+            switch (column.key) {
+              case "task":
+                return (
+                  <div>
+                    <p className="font-medium">{task.title}</p>
+                    <p className="text-sm text-muted-foreground">{task.description}</p>
+                  </div>
+                )
+              case "status":
+                return <StatusBadge status={task.status} />
+              case "priority":
+                return <StatusBadge status={task.priority} type="priority" />
+              case "dueDate":
+                return (
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{task.dueDate}</span>
+                  </div>
+                )
+              case "actions":
+                return (
+                  <ActionButtons
+                    actions={[
+                      {
+                        icon: <Eye className="h-4 w-4" />,
+                        trigger: (
+                          <Button variant="ghost" size="sm" onClick={() => openViewDialog(task)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        ),
+                      },
+                      {
+                        icon: <Edit className="h-4 w-4" />,
+                        trigger: (
+                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(task)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        ),
+                      },
+                      {
+                        icon: <Trash2 className="h-4 w-4" />,
+                        className: "text-destructive hover:text-destructive",
+                        trigger: (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{task.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => handleDeleteTask(task.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ),
+                      },
+                    ]}
+                  />
+                )
+              default:
+                return null
+            }
+          }}
+        />
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={tasksPerPage}
+          totalItems={filteredTasks.length}
+        />
+
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-serif">Create New Task</DialogTitle>
+              <DialogDescription>Add a new task to your personal task list</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Task Title</Label>
+                <Input value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={newTask.description}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 />
-              )
-            default:
-              return null
-          }
-        }}
-      />
-
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-serif">Create New Task</DialogTitle>
-            <DialogDescription>Add a new task to your personal task list</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Task Title</Label>
-              <Input value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={newTask.description}
-                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={newTask.status} onValueChange={(value) => setNewTask({ ...newTask, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select value={newTask.priority} onValueChange={(value) => setNewTask({ ...newTask, priority: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Due Date</Label>
-              <Input
-                type="date"
-                value={newTask.dueDate}
-                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-              />
-            </div>
-            <Button onClick={handleCreateTask} className="w-full">
-              Create Task
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-serif">Edit Task</DialogTitle>
-            <DialogDescription>Update task details and status</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Task Title</Label>
-              <Input value={editTask.title} onChange={(e) => setEditTask({ ...editTask, title: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={editTask.description}
-                onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={editTask.status} onValueChange={(value) => setEditTask({ ...editTask, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select
-                  value={editTask.priority}
-                  onValueChange={(value) => setEditTask({ ...editTask, priority: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Due Date</Label>
-              <Input
-                type="date"
-                value={editTask.dueDate}
-                onChange={(e) => setEditTask({ ...editTask, dueDate: e.target.value })}
-              />
-            </div>
-            <Button onClick={handleEditTask} className="w-full">
-              Update Task
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-serif">Task Details</DialogTitle>
-            <DialogDescription>Complete information about this task</DialogDescription>
-          </DialogHeader>
-          {viewTask && (
-            <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">Task Title</Label>
-                  <p className="text-lg font-medium">{viewTask.title}</p>
+                  <Label>Status</Label>
+                  <Select value={newTask.status} onValueChange={(value) => setNewTask({ ...newTask, status: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
-                  <StatusBadge status={viewTask.status} />
+                  <Label>Priority</Label>
+                  <Select
+                    value={newTask.priority}
+                    onValueChange={(value) => setNewTask({ ...newTask, priority: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-                <p className="text-sm leading-relaxed">{viewTask.description || "No description provided"}</p>
+                <Label>Due Date</Label>
+                <Input
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                />
               </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">Priority</Label>
-                  <StatusBadge status={viewTask.priority} type="priority" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">Created Date</Label>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{viewTask.createdAt}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">Due Date</Label>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{viewTask.dueDate}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    setIsViewDialogOpen(false)
-                    openEditDialog(viewTask)
-                  }}
-                >
-                  Edit Task
-                </Button>
-              </div>
+              <Button onClick={handleCreateTask} className="w-full">
+                Create Task
+              </Button>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-serif">Edit Task</DialogTitle>
+              <DialogDescription>Update task details and status</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Task Title</Label>
+                <Input value={editTask.title} onChange={(e) => setEditTask({ ...editTask, title: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={editTask.description}
+                  onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={editTask.status}
+                    onValueChange={(value) => setEditTask({ ...editTask, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <Select
+                    value={editTask.priority}
+                    onValueChange={(value) => setEditTask({ ...editTask, priority: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Due Date</Label>
+                <Input
+                  type="date"
+                  value={editTask.dueDate}
+                  onChange={(e) => setEditTask({ ...editTask, dueDate: e.target.value })}
+                />
+              </div>
+              <Button onClick={handleEditTask} className="w-full">
+                Update Task
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="font-serif">Task Details</DialogTitle>
+              <DialogDescription>Complete information about this task</DialogDescription>
+            </DialogHeader>
+            {viewTask && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Task Title</Label>
+                    <p className="text-lg font-medium">{viewTask.title}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                    <StatusBadge status={viewTask.status} />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                  <p className="text-sm leading-relaxed">{viewTask.description || "No description provided"}</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Priority</Label>
+                    <StatusBadge status={viewTask.priority} type="priority" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Created Date</Label>
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{viewTask.createdAt}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Due Date</Label>
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{viewTask.dueDate}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setIsViewDialogOpen(false)
+                      openEditDialog(viewTask)
+                    }}
+                  >
+                    Edit Task
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
+  }
 
   const renderProfile = () => (
     <div className="space-y-6">
